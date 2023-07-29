@@ -1,0 +1,532 @@
+\documentclass{article}
+\author{Gunbir Singh Baveja}
+\title{MIT 6.86x}
+
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\usepackage{hyperref}
+
+\DeclareMathOperator*{\argmax}{arg\,max}
+
+\begin{document}
+
+\maketitle
+
+\section{Linear Classifiers and Generalizations}
+\subsection{Intro}
+
+Training data can be graphically depicted on a (hyper)plane. \textbf{Classifiers} are mappings taht take feature vectors as input and produce labels as output. A common kind of classifier is the lilenar classifier, which linearly divides space (the (hyper)plane where training data lies) into two. Given a point $x$ in the space, the classifier $h$ outputs $h(x)=1$ or $h(x)=-1$, depending on where the point $x$ exists in among the two linearly divided spaces.
+
+
+\textbf{What is the meaning of hypothesis space?} It is the set of possible classifiers.
+
+\subsection{Linear Classifier and Perceptron}
+\begin{itemize}
+\item Feature, vectors - $x\in\mathbb{R}^d, y\in\{-1,1\}$
+\item Training set - $S_n = \{\left(x^{(i)},y^{(i)}\right), i=1,\ldots,n\}$
+\item Classifier - $h:\mathbb{R}^d\rightarrow\{-1,1\},h(x)=1,\mathcal{X}^{+}=\{x\in\mathbb{R}^d:h(x)=1\},\mathcal{X}^{-}=\{x\in\mathbb{R}^d:h(x)=-1\}$
+\item Training error - $\mathcal{E}_n(h)=\frac{1}{n}\sum\limits_{i=1}^n[\![h\left(x^{(i)}\right)\neq y^{(i)}]\!]=1$ if error and $0$ otherwise.
+\item Test error - $\mathcal{E}(h)$
+\item Set of classifiers - $\mathcal{H}, h\in\mathcal{H}$
+\item \textbf{NEW} Perceptron Algorithm - $\hat{h}=\mathcal{A}\left(S_n,\mathcal{H}\right)$
+\end{itemize}
+
+During most of the lectures, for a linear classifier $h$, $h(x;\theta)=sign(\theta\cdot x), \theta\in\mathbb{R}^d$, i.e., the sign of the dot product of $\theta$ and $x$. The decision boundary can be represented as $\{x:\theta_1x_1+\theta_2x_2=0\}$ which can be represented in terms of vectors $\theta\cdot X=0$ where $\theta = [\theta_1,\theta_2]^T, X=[x_1,x_2]^T$. \textbf{Note:} The decision boundary talked about above does not have $\theta_0$ as we're only talking about linear classifiers that pass through the origin at the moment.
+
+
+If we introduce the offset parameter $\theta_0$, the new vector now becomes $\theta=[\theta_1, \theta_2,\cdots, \theta_0]^T$ and the classifier/decision boundary equation now becomes $\{x:\theta\cdot\textbf{x}+\theta_0\}$ and the new linear classifier now becomes $h(x;\theta,\theta_0)=sign(\theta\cdot\textbf{x}+\theta_0), \theta\in\mathbb{R}^d, \theta_0\in\mathbb{R}$.
+
+\paragraph{Definition:} Training examples $S_n=\{\left(x^{(i)},y^{(i)}\right),i=1,\ldots,n\}$ are \textit{linearly separable} if there exists a parameter vector $\hat{\theta}$ and offset parameter $\hat{\theta_0}$ such that $y^{(i)}\left(\hat{\theta}\cdot x^{(i)}+\hat{\theta_0}\right)>0$ for all $i=1,\ldots,n$.
+
+
+\begin{algorithm}
+\caption{Perceptron Algorithm}
+\begin{algorithmic}
+\Procedure{Perceptron}{$\left(\{x^{(i)}, i=1,\ldots,n\},T\right)$}
+\State $\text{Initialize }\theta=0\text{ (vector)}$
+\For{$t=1,\ldots,T$}
+\For{$i=1,\ldots,n$}
+\If{$y^{(i)}\left(\theta\cdot x^{(i)}\right)\leq 0$}
+\State $\text{update }\theta=\theta+y^{(i)}x^{(i)}$
+\EndIf
+\EndFor
+\EndFor
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Hinge Loss, Margin boundaries}
+Consider a line $L$ in $\mathbb{R}^2$ given by the equation $$L:\theta\cdot x+\theta_0=0$$ where $\theta$ is a vector normal to the line $L$, then the shortest distance $d$ between the line $L$ and a point $P$ is $$d=\frac{|\theta\cdot x_0+\theta_0|}{\lVert\theta\rVert}$$
+
+The \textbf{margin boundary} is the set of points $x$ which satisfy $$\theta\cdot x+\theta_0=\pm 1.$$ So, the distance from the decision boundary to the margin boundary $\frac{1}{\lVert\theta\rVert}$. As we increase $\lVert\theta\rVert$, the margin boundaries move closer to the decision boundary.
+
+
+\begin{itemize}
+\item Hinge Loss - $\text{Loss}_h\left(y^{(i)}(\theta\cdot x^{(i)}+\theta_0)\right)=\begin{cases}0&\text{if}\ z\geq 1\\ 1-z&\text{if}\ z<1\end{cases}$
+\item Regularization: towards max margin $$\max\frac{1}{\lVert\theta\rVert}\qquad\min\frac{1}{2}\lVert\theta\rVert^2$$
+\item The objective $$J(\theta,\theta_0)=\frac{1}{n}\sum\limits_{i=1}^n\text{Loss}_h\left(y^{(i)}(\theta\cdot x^{(i)}+\theta_0)\right)+\frac{\lambda}{2}\lVert\theta\rVert^2.$$
+\item General optimization formulation of learning $$\text{objective function = average loss + regualarization}$$
+\end{itemize}
+
+\paragraph{A little insight to Generalization}
+Generalization can be understood by dividing the objective function by lambda and remove its dependence on the margin-maximizing term.\[\frac{1}{\lambda}J(\theta, \theta_0)=
+\frac{1}{\lambda n}\sum\limits_{i=1}^n\text{Loss}_h\left(y^{(i)}(\theta\cdot x^{(i)}+\theta_0)\right)+\frac{\lVert\theta\rVert^2}{2}.\]
+Here, $1/n\lambda$ can be written as $C$. Now, plotting the objective function loss against C, there is an infinimum that can be observed. Towards the left of the infinimum, we have underfitting where the training loss is getting lowered and so is the testing loss, and toward the right we have overfitting, where the training and test loss both are getting higher. 
+
+The infinimum can be denoted as $C^{*}$ which minimizes the sum of training and testing loss.
+
+\subsubsection{Error Decomposition}
+For training examples: $\mathcal{S}:(\mathcal{X}\times\mathcal{Y})^N$ from a dataset distribution $\mathcal{D}$ on $\mathcal{X}\times\mathcal{Y}$. A hypothesis $f:\mathcal{X}\rightarrow\mathcal{Y}$ has \textbf{training error} $\text{trn}_\mathcal{S}(f)=\mathbb{P}_{(x,y)\sim\mathcal{S}}[f(x)\neq y]$, an average over samples; and \textbf{testing error} $\text{tst}(f)=\mathbb{P}_{(x,y)\sim\mathcal{D}}[f(x)\neq y]$, an average over the dataset.
+
+A \emph{learning program} is a function $\mathcal{L}:(\mathcal{X}\times\mathcal{Y})^N\rightarrow(\mathcal{X}\rightarrow\mathcal{Y})$; we want to design $\mathcal{L}$ so that it maps typical $\mathcal{S}$'s to $f$s with low $\text{tst}(f)$.
+
+
+So we often define $\mathcal{L}$ to roughly minimize $\text{trn}_\mathcal{S}$ over a set $\mathcal{H}\subset(\mathcal{X}\rightarrow\mathcal{Y})$ of the candidate patterns. Then tst decomposes into the failures of $\text{trn}_\mathcal{S}$ to estimate tst (generalization), of $\mathcal{L}$ to minize $\text{trn}_\mathcal{S}$ (optimization), and of $\mathcal{H}$ to contain the original dataset (approximation/representation):
+\begin{align*}
+	\text{tst}(\mathcal{L}(\mathcal{S}))&=\text{tst}(\mathcal{L}(\mathcal{S}))&-\text{trn}_\mathcal{S}(\mathcal{L}(\mathcal{S}))\tag{generalization error}\\
+	&+\text{trn}_\mathcal{S}(\mathcal{L}(\mathcal{S}))&-\text{inf}_{\mathcal{H}}(\text{trn}_{\mathcal{S}}(f))\tag{optimization error}\\
+	&+\text{inf}_{\mathcal{H}}(\text{trn}_\mathcal{S}(f))&{}\tag{approximation error}
+\end{align*}
+
+These terms are in tension. For example, as $\mathcal{H}$ grows, the approx. error may decrease while the gen. error may increase -- this is the "\textbf{bias-variance} tradeoff".
+\end{align*}
+
+\subsubsection{Gradient Descent: Geometrically Revisited}
+
+Assume $\theta\in\mathbb{R}$. Our goal is to find $\theta$ that 
+minimizes \[J(\theta, \theta_0)=\frac{1}{n}\sum\limits_{i=1}^n\text{Loss}_h\left(y^{(i)}(\theta\cdot x^{(i)}+\theta_0)\right)+\frac{\lambda}{2}\lVert\theta\rVert^2\] through gradient descent.
+
+In other words, we will 
+\begin{enumerate}
+	\item Start $\theta$ at an arbitrary location: $\theta\leftarrow\theta_{start}$
+	\item Update $\theta$ repeatedly with $\theta\leftarrow\theta -\eta\frac{\partial J(\theta, \theta_0)}{\partial\theta}$ until $\theta$ does not change significantly.
+\end{enumerate}
+
+\paragraph{Stochastic Gradient descent}
+With stochastic gradient descent, we choose $i\in\{1,\ldots,n\}$ at random and update $\theta$ such that \[\theta\leftarrow\theta-\eta\nabla_\theta\left[\text{Loss}_h\left(y{(i)}\cdot x^{(i)}+\theta_0)\right)+\frac{\lambda}{2}\lVert\theta\rVert^2\right]^2.\]
+
+Note that when talking about loss, we refer to the \emph{Hinge loss} which can be written formally as \[\max{(0,1-y\cdot f(x))}\]
+
+\paragraph{Note} In a realizable case, if we only disallow any margin violations, the quadratic program we have to solve is to find $\theta, \theta_0$ that minimizes $\frac{1}{2}\lVert\theta\rVert^2$ subject to the $y(\theta\cdot\mathbf{x}+\theta_0)\geq 1$.
+
+\subsection{A look at Cross Validation}
+If we have a dataset with training and validation data points, $\left(\mathcal{X}_\text{data},\mathcal{Y}_\text{data}\right)$, we take a parameter $n$ which accounts for the $n$ total divisions we make of the total dataset such that each small subset is still a good representaion of its whole.
+
+
+We take an array of $\alpha$ and iterate through the partitions classifying training with validation dataset to get an accuracy $S(\alpha)$. We repeat this $n$ times and get $S(\alpha_1)=\frac{1}{n}\sum\limts_{n=1}^n S_n(\alpha_1)$.
+
+We repeat the above process for each $\alpha_i\in\alpha$ which would give us $\mathcal{S}(a\lpha)$ and the goal becomes to find the $\argmax{\mathcal{S}(\alpha)}$ and find $\alpha^*$.
+
+\section{Nonlinear Classifications and Linear Regression}
+\subsection{Linear Regression}
+Instead of having a binary output $y\in\{0,1\}$, linear regression can be defined as a function:
+\[f(x,\theta,\theta_0)=\sum\limits_{i=1}^d\theta_i x_i+\theta_0=\theta\mathbf{x}+\theta_0,\]
+where we take $\theta_0=0$ for simplification, and $y\in\mathbb{R}$.
+
+\paragraph{Note} We see that since $f(x)$ is a linear function, it would only be useful for predicting linearly shaped data and that is true. We will see in section XX that we can map the data into higher dimensional representations and then linearly solve them.
+
+\subsubsection{Objective}
+The empirical risk $R_n$ is defined as 
+\[R_n(\theta)=\frac{1}{n}\sum\limits_{i=1}^n\text{Loss}\left(y^{(t)}-\theta\cdot x^{(t)}\right)\]
+where $\left(x^{(t)},y^{(t)}\right)$ is the $t$th training example (with $n$ in total), and $\text{Loss}$ is some loss function, e.g. the hinge loss or the squared loss given by $\Loss(z)=z^2/2$.
+
+
+Recall that the hinge loss is defined as 
+\[\text{Loss}_h(z)=\begin{cases}0&\text{if }z\geq 1\\
+1-z,&\text{otherwise}\end{cases}.\]
+
+
+\paragraph{Mistakes}
+\begin{enumerate}
+	\item \textbf{Structural Mistakes:} If the true underlying relationship is of a different \emph{structure} than the regression function, there is a high structural loss that is incurred. For example, if the data is non-linear but the regression function is linear.
+	\item \textbf{Estimation Mistakes:} This is the same as the training loss, and is usually incurred when the training dataset is very small. Increasing the number of training examples decreases this error.
+\end{enumerate}
+
+\paragraph{NOTE!!} There is a trade-off between these two mistakes. Using a rich high-dimensional function for regression might reduce structural mistakes, but the same dataset would be used to train many more parameters thereby incurring an estimation loss. On the other hand, if you have the minimum number of parameters to help estimation error, structural error is introduced.
+
+\subsubsection{Gradient-based approach}
+\begin{align*}
+	\nabla_\theta\left(y^{(t)}-\theta x^{(t)}\right)^2/2=
+	\left(y^{(t)}-\theta x^{(t)}\right)\nabla_\theta\left(y^{(t)}-\theta x^{(t)}\right)=-\left(y^{(t)}-\theta x^{(t)}\right)x^{(t)}
+\end{align*}
+
+\begin{algorithm}
+	\caption{Gradient Descent}
+	\begin{algorithmic}
+	\State $\text{Initialize }\theta=0$
+	\State $\text{Randomly pick }t=\{1,\ldots,n\}$
+	\State $\theta=\theta+\eta\left(y^{(t)}-\theta x^{(t)}\right)\cdot x^{(t)}$
+	\State  $\eta_t=\frac{1}{1+t}$
+	\end{algorithmic}
+\end{algorithm}
+\newpage
+\subsubsection{Closed form solution}
+There are two caveats to this:
+\begin{enumerate}
+	\item Is $A$ always reversible? We see that $A$ is only reversible if the vectors of $A$, $x^1,x^2,\ldots,x^n$ span $\mathbb{R}^d,$ and $n>>d$. Therefore, it becomes unlikely when the number of training examples is much larger than the dimensionality of the feature vector.
+	\item Reversing the matrix is of complexity $\mathcal{O}(d^3)$ and so as the dimensionality vector increases, the cost increases much more.
+\end{enumerate}
+
+The empirical risk is 
+\[R_n(\theta)=\frac{1}{n}\sum\limits_{t=1}^n\left(y^{(t)}-\theta x^{(t)}\right)^2/2.\]
+\begin{align*}
+\nabla_\theta R_n(\theta)\big|_{\theta=\vec{\theta}}&=\frac{1}{n}\sum\limits_{t=1}^n\left(y^{(t)}-\theta x^{(t)}\right)^2/2\big|_{\theta=\vec{\theta}}\\ 
+	&=-\frac{1}{n}\sum\limits_{t=1}^n\left(y^{(t)}-\vec{\theta} x^{(t)}\right)x^{(t)}\\
+	&=\underbrace{-\frac{1}{n}\sum\limits_{t=1}^n y^{(t)}x^{(t)}}_{\text{b}}+\frac{1}{n}\sum\limits_{t=1}^n x^{(t)}x^{(t)}\\
+	&=-b+\frac{1}{n}\sum\limits_{t=1}^n x^{(t)}\vec{\theta}x^{(t)}\\&=-b+\underbrace{\frac{1}{n}\sum\limits_{t=1}^n x^{(t)}\left(x^{(t)}\right)^T\vec{\theta}}_{\text{A}}\\
+	&\implies -b+A\vec{\theta}=0\\
+	&\implies A\vec{\theta}=b\\
+	&\implies \vec{\theta}=A^{-1}b.
+\end{align*}
+
+\subsubsection{Regularization}
+Regularization in regression tries to push the parameters closer to $0$ and it only happens if the move is justified (training loss isn't incurred too much).
+
+We define a new objective function for regression known as \textbf{Ridge Regression} as
+\[J_{n,\lambda}(\theta,\theta_0)=\frac{1}{n}\sum\limits_{t=1}^n\frac{\left(y^{(t)}-\theta\cdot x^{(t)}-\theta_0\right)^2}{2}+\frac{\lambda}{2}\lVert\theta\rVert^2.\]
+
+We see that the gradient of this loss function is 
+\[\nabla_\theta J_{n,\lambda}(\theta,\theta_0)=\nabla_\theta\left(\frac{\lambda}{2}\lVert\theta\rVert^2+\left(y^{(t)}-\theta x^{(t)}\right)^2/2\right)=\lambda\theta-\left(y^{(t)}-\theta x^{(t)}\right)x^{(t)}\]
+
+\begin{algorithm}
+	\caption{Ridge Gradient Descent}
+	\begin{algorithmic}
+	\State $\text{Initialize }\theta=0$
+	\State $\text{Randomly pick }t=\{1,\ldots,n\}$
+		\State $\theta=\theta-\eta\left(\lambda\theta-\left(y^{(t)}-\theta x^{(t)}\right)x^{(t)}\right)=\theta(1-\eta\lambda)+\eta\left(y^{(t)}-\theta x^{(t)}\right)x^{(t)}$
+	\State  $\eta_t=\frac{1}{1+t}$
+	\end{algorithmic}
+\end{algorithm}
+
+\subsubsection{Equivalance of regularization to a Gaussian Prior on Weights}
+The regularized linear regression can be interpreted from a probabilistic point of view. Suppose we are fitting a linear regression model with $n$ data points $(x_1,y_1),(x_2,y_2),\ldots,(x_n,y_n)$. Let's assume the ground truth is that $y$ is linearly related to $x$ but we also observed some noise $\epsilon$ for $y$:
+\[y_t=\theta\cdot x_t+\epsilon\] where $\epsilon\sim\mathcal{N}(0,\sigma^2)$.
+
+
+Then the likelihood of our observed data (assuming that they are independent) is 
+\[\prod_{t=1}^n\mathcal{N}(y_t\mid\theta x_t,\sigma^2).\]
+
+Now, if we impose a Gaussian prior $\mathcal{N}(\theta\mid 0,\lambda^{-1})$, the likelihood will change to 
+\[\prod_{t=1}^n\mathcal{N}(y_t\mid\theta x_t,\sigma^2)\mathcal{N}(\theta\mid 0,\lambda^{-1}).\]
+
+
+Take the logarithm of the likelihood, we will end up with 
+\[\sum\limits_{t=1}^n-\frac{1}{2\sigma^2}(y_t-\theta x_t)^2-\frac{1}{2}\lambda\lVert\theta\rVert^2+\text{ constant}.\]
+
+\subsection{Nonlinear Classification}
+
+We can use linear classifiers by mapping all examples $x\in\mathbb{R}^d$ to different feature vectors $\phi(x)\in\mathbb{R}^p$ where typically $p$ is much larger than $d$. We would then simply use a linear classifier on the new (higher dimensional) feature vectors, pretending that they were the original input vectors. As a result, all the linear classifiers we have learned remain applicable, yet produce non-linear classifiers in the original coordinates.
+
+
+There are many ways to create such feature vectors. One common way is to use polynomial terms of the original coordinates as the components of the feature vectors. We have seen two examples in the video above. We will recall the 1-dimensional example here and see another 2-dimensional example in the problem below.
+
+Remember that $h(x;\theta,\theta_0)=\text{sign}(\theta x+\theta_0)$. We map $x$ such that
+\begin{align*}x\in\mathbb{R}\rightarrow\phi(x)\in\mathbb{R}^2&=\begin{bmatrix}x\\x^2\end{bmatrix},
+	\\\theta\rightarrow\theta&=\begin{bmatrix}\theta_1\\\theta_2\end{bmatrix},\\
+		h(x;\theta,\theta_0)\rightarrow h&=\text{sign}(\theta\cdot\phi(x)+\theta_0)\\
+	&=\text{sign}(\theta_1 x+\theta_2 x^2+\theta_0)
+\end{align*}
+
+The new feature vector $\phi(x)$ thus equals $$\begin{bmatrix}x(\phi_1)\\ x^2(\phi_2)\end{bmatrix}.$$
+
+We can add more polynomial terms
+$$x\in\mathbb{R},\phi(x)=\begin{bmatrix}x\\x^2\\x^3\\\vdots\end{bmatrix}.$$
+
+This means lots of features in higher dimensions
+\[x=\begin{bmatrix}x_1\\x_2\end{bmatrix}\in\mathbb{R}^2,\phi(x)=\begin{bmatrix}x_1\\x_2\\x_1^2\\x_2^2\\\sqrt{2}x_1x_2\end{bmatrix}\in\mathbb{R}^5.\]
+
+\paragraph{Why not feature vectors?}
+\begin{itemize}
+	\item By mapping input examples explicitly into feature vectors, and performing linear calssification or regression on top of such feature vectors, we get a lot of expressive power.
+	\item By the downside is that these vectors can be quite high dimensional.
+\end{itemize}
+
+\subsubsection{Kernels}
+Computing the inner product between two feature vectors \emph{can be} cheap even if the vectors are very high dimensional
+\[\phi(x)=[x_1,x_2,x_1^2,\sqrt{2}x_1x_2,x_2^2]^T\hspace{.2in}\phi(x')=[x'_1,x'_2,x'_1^2,\sqrt{2}x'_1x'_2,x'_2^2]^T\]
+
+Taking a dot product leads to $\phi(x)\cdot\phi(x')=(x\cdot x')+(x\cdot x')^2$ which is much easier to compute! This is the kernel function.
+
+For some feature maps, we can evaluate the inner products very efficiently, e.g., 
+\[K(x,x')=\phi(x)\phi(x')=(1+x\cdot x')^P,\text{where }p=1,2,\ldots.\]
+
+In those cases, it is advantageous to express the linear classifiers (regression methods) in terms of kernels rather than explicitly constructing feature vectors.
+
+\begin{algorithm}
+\caption{Recall Perceptron (The kernel Perceptron Algorithm)}
+\begin{algorithmic}
+	\Procedure{Kernel Perceptron}{$\left(\{(x^{(i)},y^{(i)}),i=1,\ldots,n,T\}\right)$}
+	\State $\text{Initialize }\alpha_1,\alpha_2,\ldots,\alpha_n\text{ to some values;}$
+	\For{$t=1,\ldots,T$}
+	\For{$i=1,\ldots,n$}
+	\If{(Mistake Condition Expressed in $\alpha_j$)}
+	\State $\text{Update }\alpha_j\text{ accordingly}$
+	\EndIf
+	\EndFor
+	\EndFor
+	\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+We can summarize $\theta=\sum\limits_{j=1}^n\underbrace{\alpha_j}_{\text{\# of mistakes}} y^{(i)}\phi(x^{(i)})$
+
+\paragraph{Composition Rules}
+\begin{enumerate}
+	\item $K(x,x')=1$ is a kernel function.
+	\item Pre or post-multiplying a function $f:\mathbb{R}^d\rightarrow\mathbb{R}$ and $K(x,x')$ is a kernel, then $\tilde{K}(x,x')=f(x)K(x,x')f(x')$.
+	\item If $K_1(x,x')$ and $K_2(x,x')$ are kernels, then $K(x,x')=K_1(x,x')+K_2(x,x')$ is a kernel.
+	\item If $K_1(x,x')$ and $K_2(x,x')$ are kernels, then $K(x,x')=K_1(x,x')K_2(x,x')$ is a kernel.
+\end{enumerate}
+
+\subsubsection{Radial Basis Kernel}
+The feature vectors can be infinite dimensional, this emans that they have unlimited expressive power. One such kernel that allows for compact representation of examples is the \textbf{radial basis kernel}:
+\[K(x,x')=\text{exp}\left(-\frac{1}{2\sigma^2}\lVert x-x'\rVert^2\right),\]
+where $\lVert x-x'\rVert^2$ may be recognized as the \texstbf{squared Euclidean distance} between the two feature vectors, and $\sigma$ a free parameter. An equivalent definition involves a paramter $\gamma=\frac{1}{2\sigma^2}$:
+\[K(x,x')=\text{exp}(-\gamma\lVert x-x'\rVert^2).\]
+
+The RBF value decreases between $0$ and $1$ (where $x=x'$). The feature space of the kernel has an infinite number of dimensions\footnote{For further reading: \href{https://members.cbio.mines-paristech.fr/~jvert/publi/04kmcbbook/kernelprimer.pdf}{check this out}}; for $\sigma=1$, its expansion using the multinomial theorem is:
+\begin{align*}
+	\text{exp}\left(-\frac{1}{2}\lVert x-x'\rVert^2\right)&=\text{exp}\left(\frac{2}{2}x^Tx'-\frac{1}{2}\lVert x\rVert^2-\frac{1}{2}\lVert x'\rVert^2\right)\\
+	&= \text{exp}(x^T x')\text{exp}\left(-\frac{1}{2}\lVert x\rVert^2\right)\text{exp}\left(-\frac{1}{2}\lVert x'\rVert^2\right)\\
+	&= \sum\limits_{j=1}^\infty \frac{(x^Tx')^j}{j!}\text{exp}\left(-\frac{1}{2}\lVert x\rVert^2\right)\text{exp}\left(-\frac{1}{2}\lVert x'\rVert^2\right)\\
+	&= \sum\limits_{j=0}^\infty\sum\limits_{n_1+n_2+\cdots+n_k=j}\text{exp}\left(-\frac{1}{2}\lVert x\rVert^2\right)\frac{x_1^{n_1}\cdots\x_k^{n_k}}{\sqrt{n_1!\cdots n_k!}}\text{exp}\left(-\frac{1}{2}\lVert x'\rVert^2\right)\frac{x'_1^{n_1}\cdots x'_k^{n_k}}{\sqrt{n_1!\cdot n_k!}}\\
+	&=\langle\varphi(x),\varphi(x')\rangle\\
+	\varphi(x)&=\text{exp}\left(-\frac{1}{2}\lVert x\rVert^2\right)\left(a_{l_0}^{(0)},a_1^{(1)},\ldots,a_{l_1}^{(1)},\ldots,a_1^{(j)},\ldots,a_{l_j}^{(j)},\ldots)
+\end{align*}
+where $l_j=\binom{k+j-1}{j},a_l^{(j)}=\frac{x_1^{n_1}\cdots x_k^{n_k}}{\sqrt{n_1!\cdots n_k!}}$ and $n_1+n_2+\cdots n_k=j\wedge 1\leq l\leq l_j$.
+
+
+\section{Neural Networks}
+\subsection{Feedforward Neural Nets}
+\begin{itemize}
+	\item Units in neural networks are linear classifiers, just with different output non-linearity
+	\item The units in feedforward neural networks are arranged in layers
+	\item By learning the parameters associated with the hidden layer units, we learn how to \textit{represent} examples (as hidden layer activations)
+	\item The representations in neural networks are learned directly to facilitate the end-to-end task
+	\item A simple classifier (output unit) suffices to solve complex classification tasks if it operates on the hidden layer representations
+\end{itemize}
+
+\paragraph{Learning neural networks} With $f=f(x;w)$ being the output layer functions creating the output $y$, we update the weights by: 
+\[w_{ij}^{'}\leftarrow w_{ij}^{'} -\eta\frac{\partial\text{Loss}\left(y,f(x;w)\right)}{\partial w_{ij}^{'}}.\]
+
+And for calculating the derivative, we use \textbf{back-propagation}.
+
+\subsubsection{Back-propagation}
+In order to calculate the effectiveness of a weight $w$ that changes $f_{L-1}$ to $f_{L}$, we say that $$\frac{\partial f_{L}}{\partial f_{L-1}}$$ communicates the information needed to train the weights.
+
+Using similar intuition, we say that the gradient is calculated via: 
+\[\frac{\partial\text{Loss}}{\partial w_i}=\frac{\partial f_i}{\partial w_i}\times\frac{\partial\text{Loss}}{\partial f_i}.\]
+
+Here, $$\frac{\partial\text{Loss}}{\partial f_i}=\frac{\partial f_{i+1}}{\partial f_i}\times \frac{\partial\text{Loss}}{\partial f_{i+1}}.$$
+
+\paragraph{Proof for the derivative of the hyberbolic tangent function}
+\begin{align*}
+	\frac{\text{d}}{\text{d}z}\left(\frac{e^z-e^{-z}}{e^z+e^{-z}}\right) &= \frac{(e^z-e^{-z})(e^z+e^{-z})-(e^z-e^{-z})(e^z-e^{-z})}{(e^z+e^{-z})^2}\\
+	&= \frac{(e^z+e^{-z})^2-(e^z-e^{-z})^2}{(e^z+e^{-z})^2}\\
+	&= 1 - \left(\frac{e^z-e^{-z}}{e^z+e^{-z}}\right)^2.
+\end{align*}
+
+Using the derivative of the hyperbolic tangent functions, we can find the derivative $\frac{\partial f_{i+1}}{\partial f_i}=(1-f_{i+1}^2)w_{i+1}$ and $\frac{\partial f_i}{\partial w_i}=(1-f_i^2)x$.
+
+Thus, back-propagation becomes a recursive function where the base case is $\frac{\partial\text{Loss}}{\partial f_L}=\frac{\partial\frac{1}{2}(y-f_L)^2}{\partial f_L}$ which equals $-(y-f_L)$, where $f_L$ is the function of the last neuron in a network.
+
+\paragraph{Note} If the derivatives of this \emph{Jacobian vector} becomes too small, then the gradient \emph{vanishes} pretty quickly. Conversely, if the derivatives are too large, the gradients can \emph{explode}. This is known as the \textbf{vanishing and exploding gradient problem}.
+
+\paragraph{Side Note} In these lectures, we take the loss function to be $\mathcal{L}(y,f_L)=(y-f_L)^2$.
+
+\begin{itemize}
+	\item Neural networks can be learned with SGD similarly to linear classifiers
+	\item The derivatives necessary for SGD can be evaluated effectively via back-propagation
+	\item Multi-layer neural network models are complicated... we are no longer guaranteed to reach gloabl (only local) optimum with SGD
+	\item Large models tend to be easier to learn... units only need to be adjusted so that they are, collectively, sufficient to solve the task.
+\end{itemize}
+
+\subsection{Recurrent Neural Networks}
+There are two key concepts which can be understood using the following MT example:
+\[\text{I like oranges very much}:\underbrace{[0,-2,0.3,4,0,0,1,2]}_\text{encoding}\rightarrow\underbrace{\text{Me gustan las naranjas mucho}}_{\text{decoding}}.\]
+
+\subsubsection{Encoding}
+
+Encoding sentences involve easy to introduce adjustable "legopieces" which we can optimize for end-to-end performance. And so, we have the context or state (represented by vector $s_{t-1}$ of size $m\times 1$), some new information (represented by vector $x_t$ of size $d\times 1$), and the new context or state (represented by $S_t$ of size $m\times 1$).
+
+We represent the new vector $s_t$ as $\text{tanh}\left(W^{s,s}s_{t-1}+W^{s,x}x_t\right)$\label{rnn}.
+\[\textit{context or state vector}\rightarrow\underbrace{\theta}_{\substack{\uparrow\\\textit{new information}}}\rightarrow\textit{new context or state vector}\]
+
+We see that in a sentence encoding, the vector $s_t$ is the summary of the previous words seen so far.
+
+There are three differences between the encoder (unfolded RNN) and a standard feed-forward architecture
+\begin{enumerate}
+	\item input is received at each layer (per word), not just at the beginning as in a typical feed-forward network
+	\item the number of layer varies, and depends on the length of the sentence
+	\item parameters of each layer (representing an applcation of RNN) are shared (same RNN at each step)
+\end{enumerate}
+
+We call the $\theta$ a lego piece as it's added to each step consistently (without changing).
+
+\paragraph{Note} The parameter $W^{s,x}$ represents taking into account new information $x_t$ whereas the $W^{s,s}$ represents deciding what part of the previous information to keep.
+
+\subsubsection{Gating and LSTM}
+The problem with the $s_t$ representation in \ref{rnn} is that we overwrite the previous informaiton compoeltely to get the new information, and it's helpful to have some control as to how much the previous information is retained or overwritten, and this is typically done by a gating network.
+\begin{align*}
+	g_t&=\text{sigmoid}\left(W^{g,s}s_{t-1}+W^{g,x}x_t\right)\\
+	s_t&=(1-g_t)\odot s_{t-1}+g_t\odot\text{tanh}\left(W^{s,s}s_{t-1}+W^{s,x}x_t\right)\\
+	&\underbrace{[0,1,0,0,1,1]}_{g_t}\rightarrow\underbrace{[1,0,1,1,0,0]}_{1-g_t}
+\end{align*}
+
+In an LSTM, we have a few more gates:
+\begin{align*}
+	f_t=\text{sigmoid}\left(W^{f,h}h_{t-1}+W^{f,x}x_t\right)\tag{forget gate}\\
+	i_t=\text{sigmoid}\left(W^{i,h}h_{t-1}+W^{i,x}x_t\right)\tag{input gate}\\
+	o_t=\text{sigmoid}\left(W^{o,h}h_{t-1}+W^{o,x}x_t\right)\tag{output gate}\\
+	c_t=f_t\odot c_{t-1}+i_t\odot\text{tanh}\left(W^{c,h}h_{t-1}+W^{c,x}\right)\tag{memory cell}\\
+	h_t=o_t\odot\text{tanh}(c_t)\tag{visible state}
+\end{align*}
+
+To understand, instead of taking $s_{t-1}$, the LSTM takes the combination of two vectors, $c_{t-1}$ and $h_{t-1}$ which represent the context or state and the \emph{visible} context or state, respectively.
+
+$$\begin{bmatrix}c_{t-1}\\h_{t-1}\end{bmatrix}\rightarrow\underbrace{\theta}_{\substack{\uparrow\\ x_t}}\rightarrow\begin{bmatrix}c_t\\h_t\end{bmatrix}$$
+
+The new information $x_t$ gets turned into new information $c_t$ and $h_t$. Instead of overwriting the previous state as seen before, $c_t$ also takes in information of $i_t$ and the tanh function which controls how much previous information gets to be taken forward.
+
+\paragraph{Note} The sign $\odot$ denotes element-wise multiplication.
+
+\subsubsection{Markov Models}
+We can also represent the Markov model as a feed-forward neural network (very extendable) using softmax activation function.
+
+Let's say that we want to predict the probability of the next hot encoded vector given the previous word (encoded vector) $w_{i-1}$. We can then write the probability of the $k$th output node as $P_k=P(w_i=k|w_{i-1})$ such that all $P_i\geq 0$ and the $\sum_k P_k=1$.
+
+The forward pass then becomes 
+$$z_k=\sum_j x_jW_{jk}+W_{0k}\in\mathbb{R}\hspace{.2in}P_k=\underbrace{\sigma(k)}_{\text{softmax}}=\frac{e^{z_k}}{\sum_j e^{z_j}}\implies P_j\geq 0,\sum_k P_k=1.$$
+
+\paragraph{Advantage?} These NNs are quite extendable. We can, for example, take two words (hot encodings). We can also modify this by inserting hidden layer in between the two input and output layers in order to look at more complex combinations of the preceding two words in terms of how they have mapped to the probabilities.
+
+In a trigram language model, we use the prior two words to predict the next word, and so the complexity becomes $\mathcal{O}(|v|^2\times|v|)$ where $v$ is the number of words and $v^2$ is the number of word-pairs.
+
+\subsection{Convolution Neural Network}
+We formally define teh convolution as an operation between $2$ functions $f$ and $g$:
+$$(f*g)(t)\equiv\int_{-\infty}^{+\infty}f(\tau)g(t-\tau)d\tau.$$
+
+In this integral, $\tau$ is the dummy variable for integration and $t$ is the parameter. Intuitively, convolution 'blends' the two function $f$ and $g$ by expressing the amount of overlap of one function as it is shifted over another function.
+
+\paragraph{Note} A novel method known as vision transformers have replaced CNNs focusing on more practical projects.
+
+\section{Reinforcement Learning}
+
+\begin{itemize}
+	\item Unlike with Supervised Learning, there would typically be no labelled training dataset associated with Reinforcement Learning tasks. RL algorithms learn to pick “good" actions based on the rewards that they receive during training.
+
+	\item RL is most applicable to tasks where there is no clear cut supervised training data available.
+
+	\item THe goal of RL is to learn a good policy with none or limited supervision.
+
+	\item Reinforcement learning algorithms can learn to take actions so as to maximize some notion of a cumulative reward instead of the reward for the next step and they can take "good" actions even without any intermediate rewards.
+\end{itemize}
+
+\subsection{Reinforcement Learning I}
+\paragraph{RL Terminology}
+\begin{itemize}
+	\item \textbf{States} $s\in S$ (observed)
+	\item \textbf{Action} $a\in A$
+	\item \textbf{Transitions} $T(s,a,s')=P(s'|s,a)$ - action dependent transition probabilities $T$ so that for each state $s$ and action $a$, $\sum\limits_{s'\in S}T(s,a,s')=1$.
+	\item \textbf{Reward functions} $R(s,a,s')$, representing the reward for starting in state $s$, taking action $a$ and ending up in stae $s'$ after one step. (The reward function may also depend only on $s$, or only $s$ and $a$.) 
+\end{itemize}
+
+MDPs satisfy the Markov property in that the transition probabilities and rewards depend only on the current state and action, and remain unchanged regardless of the history (i.e. past states and actions) that leads to the current state.
+
+\paragraph{Utility Function}
+In RL, the strategy of how to accumulate rewards is taken careof by utility functions. It can be understood using an analogy, take the utility of any state to be the sum of future rewards after leaving the state, or put more formally, it is the total value in rewards of the possible next states.
+
+The main problem for MDPs is to optimize the agent's behavior. To do so, we first need to specify the criterion that we are trying to maximize in terms of accumulated rewards. We will define a utility function and maximize its expectation.
+
+\paragraph{Note} The utility function can be understood as the long term reward that helps us mitigate certain problems dealt with only having immediate reward.
+
+We consider two different types of utility functions:
+
+\begin{enumerate}
+	\item Finite horizon based utility : The utility function is the sum of rewards after acting for a fixed number $n$ steps. For example, in the case when the rewards depend only on the states, the utility function is
+		\[U[s_0,s_1,\ldots,s_n]=\sum\limits_{i=0}^n R(s_i)\hspace{.2in}\text{for some fixed number of steps } n\] In particular, $U\left([s_0,\ldots,s_{n+k}]\right)=U\left([s_0,\ldots,s_n]\right)\forall k$.
+	\item (Infinite horizon) \emph{discounted} reward based utility : In this setting, the reward one step into the future is discounted by a factor of $\gamma$, the reward two steps ahead by $\gamma^2$, and so on. The goal is to continue acting (without an end) while maximizing the expected discounted reward. The discounting allows us to focus on near term rewards, and control this focus by changing $\gamma$ (obv). For example, if the rewards depend only on the states, the utility function is 
+		$$ U[s_0,s_1,\ldots]=R(s_0)+\gamma R(s_1)+\gamma^2 R(s_2)=\sum\limits_{k=0}^\infty \gamma^k R(s_k)\leq R_{\text{max}}\sum\limits_{k=0}^\infty \gamma^k=\frac{R_{\text{max}}}{1-\gamma}.$$
+\end{enumerate}
+
+\paragraph{Policy}
+For every state, $\pi^* : s\to a$ tells you the best possible action, which maximizes the expected (reward) utility.
+\paragraph{Bellman Equations}
+Here are a few important equations that are key to compute the MDP policy:
+\begin{align*}&V^*(s)-\text{ expected reward starting at $s$ and acting optimally}\\
+	&Q^*(s,a)-\text{ expected reward starting at $s$, taking action $a$ and acting optimally}\\
+	&\text{Therefore, we can write: }V^*(s)=\max_aQ^*(s,a)=Q^*\left(s,\pi^*(s)\right)\\
+	&Q^*(s,a)=\sum\limits_{s'}T(s,a,s')\left(R(s,a,s')+\gamma V(s')\right)\\
+	\implies&V^*(s)=\max_a\left[\sum\limits_{s'}T(s,a,s')\left(R(s,a,s')+\gamma V(s')\right)\right]
+\end{align*}
+
+\subsubsection{Value Iteration Algorithm}
+Let's say that $V_k^*(s)$ is the expected reward from state $s$ after $k$ steps.
+If we take $k$ to infinity, we have $V_k^*(s)\rightarrow V(s)$. This means that $V_k^*(s)$ should tend to the optimal expected reward.
+
+\begin{itemize}
+	\item We initialize with $V_1^*(s)=0$.
+	\item Iterate until $V_k^*(s)\equiv V_{k+1}^*(s)\forall s$
+		$$V_{k+1}^*(s)=\max_a\left[\sum\limits_{s'}T(s,a,a')\left(R(s,a,s')+\gamma V_k^*(s')\right)\right]$$
+	\item Compute $\pi^*(s)=\argmax\limits_a{Q^*(s,a)}$
+\end{itemize}
+
+\emph{Problem}: For our RL algorithms, we would need to provide the following tuple $\langle S,A,T,R\rangle$. However, in the real world, not all of these might be directly available. We would need to have some idea of the state space for our probelm before we could even define $A,T$ or $R$.
+
+Since the goal of RL is to train an intelligent agent that can perform interesting tasks, it is possible to identify the set of actions that this agent is allowed to take. $T,R$ might not be so readily available in the non-deterministic noisy real world.
+
+One way is to estimate $\hat{T},\hat{R}$ in the following manner:
+\begin{align*}
+	\hat{T}=\frac{\text{count}(s,a,s')}{\sum\limits_{s'}\text{count}(s,a,s')}\\
+	\hat{R}=\frac{\sum\limits_{t=1}R_t(s,a,s')}{\text{count}(s,a,s')}.
+\end{align*}
+
+The problem with this method is that the statisitics for $\hat{T},\hat{R}$ for a given state cannot be collected unless the agent visits the state during the estimation process. It might lead to the agent circling around a subset of the state space leaving the rest unexplored.
+
+For the estimates, $\hat{T},\hat{R}$ to be reliable, we would need to collect multiple samples of them for each state. If the state space is large, then during the exploration phase, some states would be significantly less edxplored than others resulting in very noisy estimates for these states.
+
+\subsubsection{Estimating inputs for RL algorithm}
+Goal: estimate $\mathbb{E}[f(x)]=\sum\limits_xp(x)f(x)$.
+\paragraph{Model-based}
+We sample the random variable $k$ times:
+$$x_i\sim p(x),i=1,\ldots,k.$$ Now we calculate the likelihood of $p(x)$:
+$$\hat{p}(x)=\frac{\text{count}(x)}{k}.$$
+Now our estimate of the expected value becomes:
+$$\mathbb{E}[f(x)]\approx\sum\hat{p}(x)f(x).$$
+
+\paragraph{Model-free}
+We sample the random variables $k$ times:
+$$x_i\sim p(x),i=1,\ldots,k.$$ Now $\mathbb{E}[f(x)]\approx\frac{\sum_{i=1}^kf(x)}{k}$.
+
+\subsubsection{Q-value iteration for RL}
+$\text{sample}_1$: $R(s,a,s_1')+\gamma\max_{a'}Q(s_1',a')$
+
+$\vdots$\\
+\noindent$\text{sample}_k$: $R(s,a,s_k')+\gamma\max_{a'}Q(s_k',a')$\\
+$Q(s,a)=\frac{1}{k}\sum\limits_{i=1}^k\text{sample}_i=\frac{1}{k}\sum\limits_{i=1}^k\left(R(s,a,s_i')+\gamma\max_{a'}Q(s_i',a')\right)$.
+
+\emph{exponential running average}
+$\bar{x}_n=\frac{x_n+(1-\alpha)x_{n-1}+(1-\alpha)^2x_{n-2}+\cdots}{1+(1-\alpha)+(1-\alpha)^2+\cdots}$ and so we have $$\bar{x}_n=\alpha x_n+(1-\alpha)\bar{x}_{n-1}.$$
+
+
+\begin{align*}
+	Q_{i+1}(s,a)=\alpha\cdot\text{sample}+(1-\alpha)\cdot Q_i(s,a) \tag{*}\\ \text{where sample is } R(s,a,s')+\gamma\max_{a'}Q(s',a')
+\end{align*}
+
+\begin{enumerate}
+	\item Initialization $Q(s,a)=0\forall s,a$
+	\item Iteration until convergence (when the difference between two values is $<\delta$)
+		\begin{itemize}
+			\item Collect sample $s,a,s',R(s,a,s')$
+			\item $Q_{i+1}(s,a)=\alpha\cdot\left(R(s,a,s')+\gamma\max_{a'}Q_i(s',a')\right)+(1-\alpha)Q_i(s,a)$\footnote{We can write $Q_i(s,a)+\alpha\left(R(s,a,s')+\gamma\max_{a'}Q_i(s',a')-Q_i(s,a)\right)$ as a gradient descent algorithmic equation where the $\alpha$ acts as the $\eta$ in the SGD algorithm}
+		\end{itemize}
+\end{enumerate}
+
+\paragraph{Exploration vs Exploitation}
+Which $a$ (action) should the agent be taking? So the question becomes- which policy? One option is for the agent to take random $a$'s and continue that way - \emph{exploration}. Another option is to take advantage of what the agent knows - \emph{exploitation}.
+Remember that $$\pi*(s)=\argmax_a Q(s,a)$$ updates the policy as the agent samples, so exploitation favors policy whereas exploration doesn't care about it. Usually, we combine the two preferring exploration in the beginning of sampling and then exploitation. This method is called \emph{$\epsilon$-greedy} where $\epsilon$ is the probability/likelihood of taking an action randomly.
+
+## module descriptioon
+\end{document}
